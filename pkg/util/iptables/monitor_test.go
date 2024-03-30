@@ -284,7 +284,7 @@ func TestIPTablesMonitor(t *testing.T) {
 }
 
 func waitForChains(mfe *monitorFakeExec, canary Chain, tables []Table) error {
-	return utilwait.PollImmediate(100*time.Millisecond, time.Second, func() (bool, error) {
+	return utilwait.PollUntilContextTimeout(context.Background(), 100*time.Millisecond, time.Second, true, func(ctx context.Context) (bool, error) {
 		mfe.Lock()
 		defer mfe.Unlock()
 
@@ -307,7 +307,7 @@ func ensureNoChains(mfe *monitorFakeExec) bool {
 
 func waitForReloads(reloads *uint32, expected uint32) error {
 	if atomic.LoadUint32(reloads) < expected {
-		utilwait.PollImmediate(100*time.Millisecond, time.Second, func() (bool, error) {
+		utilwait.PollUntilContextTimeout(context.Background(), 100*time.Millisecond, time.Second, true, func(ctx context.Context) (bool, error) {
 			return atomic.LoadUint32(reloads) >= expected, nil
 		})
 	}
@@ -319,7 +319,7 @@ func waitForReloads(reloads *uint32, expected uint32) error {
 }
 
 func waitForNoReload(reloads *uint32, expected uint32) error {
-	utilwait.PollImmediate(50*time.Millisecond, 250*time.Millisecond, func() (bool, error) {
+	utilwait.PollUntilContextTimeout(context.Background(), 50*time.Millisecond, 250*time.Millisecond, true, func(ctx context.Context) (bool, error) {
 		return atomic.LoadUint32(reloads) > expected, nil
 	})
 
@@ -331,7 +331,7 @@ func waitForNoReload(reloads *uint32, expected uint32) error {
 }
 
 func waitForBlocked(mfe *monitorFakeExec) error {
-	return utilwait.PollImmediate(100*time.Millisecond, time.Second, func() (bool, error) {
+	return utilwait.PollUntilContextTimeout(context.Background(), 100*time.Millisecond, time.Second, true, func(ctx context.Context) (bool, error) {
 		blocked := mfe.getWasBlocked()
 		return blocked, nil
 	})

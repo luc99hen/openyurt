@@ -113,17 +113,17 @@ func add(mgr manager.Manager, cfg *appconfig.CompletedConfig, r reconcile.Reconc
 	}
 
 	// Watch for changes to PoolService
-	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForObject{}, NewServicePredicated())
+	err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Service{}), &handler.EnqueueRequestForObject{}, NewServicePredicated())
 	if err != nil {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &netv1alpha1.PoolService{}}, NewPoolServiceEventHandler(), NewPoolServicePredicated())
+	err = c.Watch(source.Kind(mgr.GetCache(), &netv1alpha1.PoolService{}), NewPoolServiceEventHandler(), NewPoolServicePredicated())
 	if err != nil {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &v1beta1.NodePool{}}, NewNodePoolEventHandler(mgr.GetClient()), NewNodePoolPredicated())
+	err = c.Watch(source.Kind(mgr.GetCache(), &v1beta1.NodePool{}), NewNodePoolEventHandler(mgr.GetClient()), NewNodePoolPredicated())
 	if err != nil {
 		return err
 	}

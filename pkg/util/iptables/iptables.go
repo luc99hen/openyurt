@@ -547,7 +547,7 @@ const (
 // Monitor is part of Interface
 func (runner *runner) Monitor(canary Chain, tables []Table, reloadFunc func(), interval time.Duration, stopCh <-chan struct{}) {
 	for {
-		_ = utilwait.PollImmediateUntil(interval, func() (bool, error) {
+		_ = utilwait.PollUntilContextCancel(context.Background(), interval, true, func(ctx context.Context) (bool, error) {
 			for _, table := range tables {
 				if _, err := runner.EnsureChain(table, canary); err != nil {
 					klog.Warningf("Could not set up iptables canary %s/%s: %v", string(table), string(canary), err)
@@ -555,10 +555,10 @@ func (runner *runner) Monitor(canary Chain, tables []Table, reloadFunc func(), i
 				}
 			}
 			return true, nil
-		}, stopCh)
+		})
 
 		// Poll until stopCh is closed or iptables is flushed
-		err := utilwait.PollUntil(interval, func() (bool, error) {
+		err := utilwait.PollUntilContextCancel(context.Background(), interval, true, func(ctx context.Context) (bool, error) {
 			if exists, err := runner.chainExists(tables[0], canary); exists {
 				return false, nil
 			} else if isResourceError(err) {
@@ -569,7 +569,7 @@ func (runner *runner) Monitor(canary Chain, tables []Table, reloadFunc func(), i
 
 			// Wait for the other canaries to be deleted too before returning
 			// so we don't start reloading too soon.
-			err := utilwait.PollImmediate(iptablesFlushPollTime, iptablesFlushTimeout, func() (bool, error) {
+			err := utilwait.PollUntilContextTimeout(ctx, iptablesFlushPollTime, iptablesFlushTimeout, true, func(ctx2 context.Context) (bool, error) {
 				for i := 1; i < len(tables); i++ {
 					if exists, err := runner.chainExists(tables[i], canary); exists || isResourceError(err) {
 						return false, nil
@@ -581,7 +581,7 @@ func (runner *runner) Monitor(canary Chain, tables []Table, reloadFunc func(), i
 				klog.Warning("Inconsistent iptables state detected.")
 			}
 			return true, nil
-		}, stopCh)
+		})
 
 		if err != nil {
 			// stopCh was closed

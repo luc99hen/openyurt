@@ -20,6 +20,7 @@ limitations under the License.
 package iptables
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -72,7 +73,7 @@ func grabIptablesLocks(lockfilePath string) (iptablesLocker, error) {
 		return nil, fmt.Errorf("failed to open iptables lock %s: %w", lockfilePath, err)
 	}
 
-	if err := wait.PollImmediate(200*time.Millisecond, 2*time.Second, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), 200*time.Millisecond, 2*time.Second, true, func(ctx context.Context) (bool, error) {
 		if err := grabIptablesFileLock(l.lock16); err != nil {
 			return false, nil
 		}
@@ -82,7 +83,7 @@ func grabIptablesLocks(lockfilePath string) (iptablesLocker, error) {
 	}
 
 	// Roughly duplicate iptables 1.4.x xtables_lock() function.
-	if err := wait.PollImmediate(200*time.Millisecond, 2*time.Second, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), 200*time.Millisecond, 2*time.Second, true, func(ctx context.Context) (bool, error) {
 		l.lock14, err = net.ListenUnix("unix", &net.UnixAddr{Name: "@xtables", Net: "unix"})
 		if err != nil {
 			return false, nil

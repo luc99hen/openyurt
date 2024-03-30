@@ -32,14 +32,14 @@ type Filters struct {
 	sync.Mutex
 	names           []string
 	registry        map[string]Factory
-	disabledFilters sets.String
+	disabledFilters sets.Set[string]
 }
 
 func NewFilters(disabledFilters []string) *Filters {
 	return &Filters{
 		names:           make([]string, 0),
 		registry:        make(map[string]Factory),
-		disabledFilters: sets.NewString(disabledFilters...),
+		disabledFilters: sets.New(disabledFilters...),
 	}
 }
 
